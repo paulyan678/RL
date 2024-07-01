@@ -1,0 +1,8 @@
+The markov property is not satisfied. The action the agent is going to make is going to depend of the previous sequence of observation, state, and rewards
+  - could we somehow simplify the problem so that markov property is satisfied?
+
+How would we update the agent's guess for the initial condition based on current and/or past observations?
+ - Could we somehow solve for the inital condition based on the given parameters and current concentration function values at time t?
+  - The inital condition that statisfies our observations is likely not going to be unique. If not unique, how would we select between the possible inital conditions?
+
+Could we model the problem as a markov decision process?

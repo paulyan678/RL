@@ -1,0 +1,25 @@
+State:
+{(x, y) coordinates of the grid}
+
+Action:
+{up, down, left, right}
+
+Reward:
+KL divergence of prior and posterior for the inital condition of the plastic concentration
+
+Obervation:
+the plastic concentration at the current location
+
+High level goal:
+come up with a policy that plan out a path the robot can follow to maximize the information gain in a limit number of steps.
+
+The problem is partially observable; we cannot see the plastic concentration at all location at once.
+
+At each step:
+1. Make observation about the plastic concentration at the current grid
+2. update the prior with the current obervation
+    new_prior = update_distrubution(old_prior, observation)
+3. Pick an action (up, down, left, right) that maximize the information gain for the agent's guess for the inital distribution. 
+    argmax          information_gain(new_prior, get_posterior(new_prior, a))
+    a in actions
+4. Excute the action and move to the next step and repeat
