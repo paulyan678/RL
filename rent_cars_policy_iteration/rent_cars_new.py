@@ -7,7 +7,7 @@ b_cap = 4
 transfer_reward = -2
 rent_reward = 10
 discount = 0.9
-max_transfer = 5
+max_transfer = 2
 a_lam_return = 3
 b_lam_return = 3
 a_lam_out = 3
@@ -18,11 +18,7 @@ def possion(lam, x):
     norm_res = res / np.sum(res)
     return norm_res
 
-# array that represents the probability of returning and renting cars at locations
-a_return_prob = possion(a_lam_return, np.arange(a_cap+1))
-b_return_prob = possion(b_lam_return, np.arange(b_cap+1))
-a_out_prob = possion(a_lam_out, np.arange(a_cap+1))
-b_out_prob = possion(b_lam_out, np.arange(b_cap+1))
+
 
 def comp_reward():
     '''
@@ -80,19 +76,6 @@ def comp_reward1():
         reward[:, :, max_transfer-num_transfer] = reward[:, :, max_transfer] + transfer_reward * num_transfer
     return reward
 
-vect_reward = comp_reward()
-# not_vect_reward = comp_reward1()
-# # print every ele side by side
-# for i in range(a_cap+1):
-#     for j in range(b_cap+1):
-#         for k in range(max_transfer*2+1):
-#             print(vect_reward[i, j, k], not_vect_reward[i, j, k])
-# show the image made up of the reward without transfer
-# plt.imshow(vect_reward[:, :, max_transfer])
-# plt.show()
-# plt.imshow(not_vect_reward[:, :, max_transfer])
-# plt.show()
-
 def comp_transition_prob():
     '''
     Compute the transition probability matrix using the probability of returning and renting cars at locations
@@ -117,8 +100,6 @@ def comp_transition_prob():
                                             prob += a_return_prob[num_car_return_a] * b_return_prob[num_car_return_b] * a_out_prob[num_car_out_a] * b_out_prob[num_car_out_b]
                         transition_prob[a1, b1, a2, b2, num_transfer+max_transfer] = prob
     return transition_prob
-
-
 
 
 def comp_transition_prob_vec():
@@ -159,29 +140,75 @@ def comp_transition_prob_vec():
     
     return transition_prob
 
+
+
+
+
+def policy_evaluation(steps=1):
+    global state_value, policy, a_cap, b_cap, discount, vect_reward, prob_transition_vec
+    for _ in range(steps):
+        old_state_value = np.copy(state_value)
+        for a in range(a_cap+1):
+            for b in range(b_cap+1):
+                state_value[a, b] = vect_reward[a, b, policy[a, b]] + discount * np.sum(prob_transition_vec[a, b, :, :, policy[a, b]] * old_state_value)
+
+    
+
+def policy_improvement():
+    for a in range(a_cap+1):
+        for b in range(b_cap+1):
+            old_action = policy[a, b]
+            action_list = np.arange(-max_transfer, max_transfer+1)
+            action_reward = np.zeros(action_list.shape)
+            for i, action in enumerate(action_list):
+                action_reward[i] = vect_reward[a, b, action] + discount * np.sum(prob_transition_vec[a, b, :, :, action] * state_value)
+            policy[a, b] = action_list[np.argmax(action_reward)]
+
+def policy_iteration(steps=10):
+    for _ in range(steps):
+        policy_evaluation()
+        policy_improvement()
+
+#run 
+# array that represents the probability of returning and renting cars at locations
+a_return_prob = possion(a_lam_return, np.arange(a_cap+1))
+b_return_prob = possion(b_lam_return, np.arange(b_cap+1))
+a_out_prob = possion(a_lam_out, np.arange(a_cap+1))
+b_out_prob = possion(b_lam_out, np.arange(b_cap+1))
+
+vect_reward = comp_reward()
 prob_transition = comp_transition_prob()
 prob_transition_vec = comp_transition_prob_vec()
 
-for a1 in range(a_cap+1):
-    for b1 in range(b_cap+1):
-        for a2 in range(a_cap+1):
-            for b2 in range(b_cap+1):
-                for num_transfer in range(1*max_transfer+1):
-                    print(f"({a1}, {b1}) -> ({a2}, {b2}) under {num_transfer} transfers is iterative{prob_transition[a1,b1,a2,b2,num_transfer]} vectorized {prob_transition_vec[a1,b1,a2,b2,num_transfer]}")
-                    if prob_transition[a1,b1,a2,b2,num_transfer] != prob_transition_vec[a1,b1,a2,b2,num_transfer]:
-                        print("Error")
-                        break
+policy = np.zeros((a_cap+1, b_cap+1), dtype=np.int32)
+state_value = np.zeros((a_cap+1, b_cap+1))
 
-def policy_evaluation():
-    pass
 
-def policy_improvement():
-    pass
+# for a1 in range(a_cap+1):
+#     for b1 in range(b_cap+1):
+#         for a2 in range(a_cap+1):
+#             for b2 in range(b_cap+1):
+#                 for num_transfer in range(1*max_transfer+1):
+#                     print(f"({a1}, {b1}) -> ({a2}, {b2}) under {num_transfer} transfers is iterative{prob_transition[a1,b1,a2,b2,num_transfer]} vectorized {prob_transition_vec[a1,b1,a2,b2,num_transfer]}")
+#                     if prob_transition[a1,b1,a2,b2,num_transfer] != prob_transition_vec[a1,b1,a2,b2,num_transfer]:
+#                         print("Error")
+#                         break
 
-def policy_iteration():
-    pass
+# not_vect_reward = comp_reward1()
+# # print every ele side by side
+# for i in range(a_cap+1):
+#     for j in range(b_cap+1):
+#         for k in range(max_transfer*2+1):
+#             print(vect_reward[i, j, k], not_vect_reward[i, j, k])
+# show the image made up of the reward without transfer
+# plt.imshow(vect_reward[:, :, max_transfer])
+# plt.show()
+# plt.imshow(not_vect_reward[:, :, max_transfer])
+# plt.show()
 
-#run 
+policy_iteration(20)
 #plot
+plt.imshow(policy)
+plt.show()
 
 
